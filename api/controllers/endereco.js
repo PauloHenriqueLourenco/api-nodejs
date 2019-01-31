@@ -1,7 +1,9 @@
 'use strict';
 
-const { Client } = require('pg');
+const db = require('../../config/pg_connection');
+const Endereco = require('../../models/endereco');
 const urlConexao = require('../../config/pg_connection');
+const Op = require('sequelize').Op;
 
 module.exports = {
     cadastrar_endereco: cadastrarEndereco,
@@ -10,89 +12,70 @@ module.exports = {
 };
 
 async function cadastrarEndereco(req, res) {
-    const rua = req.body.rua.trim();
-    const numero = req.body.numero || null;
-    const complemento = req.body.complemento || null;
-    const bairro = req.body.bairro;
-    const usuario_id = req.body.usuario_id;
 
-    try {
-        const client = new Client({ connectionString: urlConexao });
-        await client.connect();
+    let { rua, numero, complemento, bairro, usuario_id } = req.body;
 
-        await client.query('INSERT INTO endereco (rua, numero, complemento, bairro, usuario_id) VALUES ($1, $2, $3, $4, $5)', [rua, numero, complemento, bairro, usuario_id]);
-        await client.end();
-
-        res.status(201).json({ mensagem: 'Endereço cadastrado com sucesso!' });
-
-    } catch (err) {
-        console.log(err);
-        res.status(500).json({ mensagem: err.toString() });
-    }
+    Endereco.create({
+        rua,
+        numero,
+        complemento,
+        bairro,
+        usuario_id
+    })
+        .then(res.status(201).json({ mensagem: 'Endereço cadastrado com sucesso!' })
+            .catch(err => console.log(err)));
 }
 
 async function listarEnderecosUsuario(req, res) {
-    const usuario_id = req.swagger.params.usuario_id.value;
 
-    try {
-        const client = new Client({ connectionString: urlConexao });
-        await client.connect();
+    Endereco.findAll({
+        where: {
+            usuario_id: req.swagger.params.usuario_id.value
+        }
+    })
+        .then(enderecos => {
+            var logradouros = [];
 
-        await client.query('SELECT rua, numero, complemento, bairro FROM endereco WHERE usuario_id = $1', [usuario_id], function (err, result) {
-            if (err) {
-                return console.error(err);
-            }
-            var enderecos = [];
-
-            result.rows.forEach(function (endereco) {
+            enderecos.forEach(function (endereco) {
                 var rua = endereco.rua;
                 var numero = endereco.numero == null ? 's/n' : endereco.numero;
                 var complemento = endereco.complemento != null ? ' - ' + endereco.complemento : '';
                 var bairro = endereco.bairro;
 
-                enderecos.push({
+                logradouros.push({
                     'endereco': rua + ', ' + numero + complemento,
                     'bairro': bairro
                 });
             })
-
             const lista = {
-                'total': result.rows.length,
-                'enderecos': enderecos
+                'total': enderecos.length,
+                'enderecos': logradouros
             }
 
             res.status(200).json(lista);
-        });
-        await client.end();
-
-    } catch (err) {
-        console.log(err);
-        res.status(500).json({ mensagem: err.toString() });
-    }
+        })
+        .catch(err => console.log(err));
 }
 
 async function listarEnderecos(req, res) {
-    var query = '';
 
     if (typeof req.query.bairro == 'undefined')
-        query = 'SELECT * FROM endereco';
-    else
-        query = `SELECT * FROM endereco WHERE bairro ILIKE '${req.query.bairro}'`;
-
-    try {
-        const client = new Client({ connectionString: urlConexao });
-        await client.connect();
-
-        await client.query(query, function (err, result) {
-            if (err) {
-                return console.error(err);
+        Endereco.findAll()
+            .then(enderecos => {
+                res.status(200).json(enderecos);
+            })
+            .catch(err => console.log(err));
+    else {
+        Endereco.findAll({
+            where: {
+                bairro: {
+                    [Op.iLike]: req.query.bairro
+                }
             }
-            res.status(200).json(result.rows);
-        });
-        await client.end();
-
-    } catch (err) {
-        console.log(err);
-        res.status(500).json({ mensagem: err.toString() });
+        })
+            .then(enderecos => {
+                res.status(200).json(enderecos);
+            })
+            .catch(err => console.log(err));
     }
 }
