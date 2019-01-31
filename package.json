@@ -4,7 +4,7 @@
   "private": true,
   "description": "Desafio API Lemobs",
   "keywords": [],
-  "author": "Marcelle Panzariello",
+  "author": "Marcelle Panzariello, editado por Paulo Henrique Lourenço",
   "license": "UNLICENSED",
   "main": "app.js",
   "dependencies": {
@@ -17,7 +17,7 @@
     "swagger-express-mw": "^0.7.0"
   },
   "devDependencies": {
-    "nodemon": "^1.18.7",
+    "nodemon": "^1.18.9",
     "should": "^7.1.0",
     "supertest": "^3.3.0"
   },
