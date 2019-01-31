@@ -8,6 +8,7 @@
   "license": "UNLICENSED",
   "main": "app.js",
   "dependencies": {
+    "@fnando/cpf": "^0.1.1",
     "cors": "^2.8.5",
     "dotenv": "^6.0.0",
     "express": "^4.16.4",
