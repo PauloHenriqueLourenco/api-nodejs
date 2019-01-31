@@ -1,0 +1,60 @@
+swagger: '2.0'
+info:
+  description: 'Avaliação Prática Lemobs'
+  version: '1.0.0'
+  title: Desafio API Lemobs
+
+basePath: /v1/
+
+consumes:
+  - application/json
+produces:
+  - application/json
+
+schemes:
+  - http
+
+paths:
+
+  # ---
+  # Serviço responsável por cadastrar um novo usuário.
+  # ---  
+  /usuario:
+    x-swagger-router-controller: usuario
+    post:
+      tags:
+        - Usuário
+      operationId: cadastrar_usuario
+      parameters:
+        - in: body
+          name: body
+          description: Modelo de Usuário
+          required: true
+          schema:
+            $ref: "#/definitions/usuario"        
+      responses:
+        '201':
+          description: Criado (Created)
+        '400':
+          description: Requisição Inválida (Bad Request)
+        '500':
+          description: Erro Interno do Servidor (Internal Server Error)    
+
+  /docs:
+    x-swagger-pipe: swagger_raw
+    
+definitions:
+  usuario:
+    type: object
+    properties:
+      nome:
+        type: string
+      data_nascimento:
+        type: string
+        format: date
+      cpf:
+        type: string
+    required:
+      - nome
+      - data_nascimento
+      - cpf
