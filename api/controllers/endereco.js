@@ -22,8 +22,8 @@ async function cadastrarEndereco(req, res) {
         bairro,
         usuario_id
     })
-        .then(res.status(201).json({ mensagem: 'Endereço cadastrado com sucesso!' })
-            .catch(err => console.log(err)));
+        .then(res.status(201).json({ mensagem: 'Endereço cadastrado com sucesso!' }))
+        .catch(err => console.log(err));
 }
 
 async function listarEnderecosUsuario(req, res) {

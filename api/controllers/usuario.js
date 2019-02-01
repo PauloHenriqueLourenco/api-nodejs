@@ -13,45 +13,57 @@ module.exports = {
 
 async function cadastrarUsuario(req, res) {
 
-    Usuario.findOne({
-        where: {
-            cpf: validador_cpf.strip(req.body.cpf) // retirado a pontuação do CPF
-        }
-    })
-        .then(usuario => {
-            if (usuario != null) {
-                res.status(400).json({ mensagem: 'CPF informado já está cadastrado' });
-            }
-            else {
-                let { nome, data_nascimento, cpf } = req.body;
+    if (validador_cpf.isValid(req.body.cpf)) {
 
-                Usuario.create({
-                    nome,
-                    data_nascimento,
-                    cpf: validador_cpf.strip(cpf) // retirado a pontuação do CPF
-                })
-                    .then(res.status(201).json({ mensagem: 'Usuário cadastrado com sucesso!' }))
-                    .catch(err => console.log(err));
+        Usuario.findOne({
+            where: {
+                cpf: validador_cpf.strip(req.body.cpf) // retirado a pontuação do CPF
             }
         })
-        .catch(err => console.log(err));
+            .then(usuario => {
+                if (usuario != null) {
+                    res.status(400).json({ mensagem: 'CPF informado já está cadastrado' });
+                }
+                else {
+                    let { nome, data_nascimento, cpf } = req.body;
+
+                    Usuario.create({
+                        nome,
+                        data_nascimento,
+                        cpf: validador_cpf.strip(cpf) // retirado a pontuação do CPF
+                    })
+                        .then(res.status(201).json({ mensagem: 'Usuário cadastrado com sucesso!' }))
+                        .catch(err => console.log(err));
+                }
+            })
+            .catch(err => console.log(err));
+    }
+    else {
+        res.status(400).json({ mensagem: 'CPF inválido' });
+    }
 }
 
 async function editarUsuario(req, res) {
 
-    let { nome, data_nascimento, cpf } = req.body;
+    if (validador_cpf.isValid(req.body.cpf)) {
 
-    Usuario.update({
-        nome,
-        data_nascimento,
-        cpf
-    }, {
-            where: {
-                id: req.swagger.params.usuario_id.value
-            }
-        })
-        .then(res.status(200).json({ mensagem: 'Usuário atualizado com sucesso!' }))
-        .catch(err => console.log(err));
+        let { nome, data_nascimento, cpf } = req.body;
+
+        Usuario.update({
+            nome,
+            data_nascimento,
+            cpf: validador_cpf.strip(cpf) // retirado a pontuação do CPF
+        }, {
+                where: {
+                    id: req.swagger.params.usuario_id.value
+                }
+            })
+            .then(res.status(200).json({ mensagem: 'Usuário atualizado com sucesso!' }))
+            .catch(err => console.log(err));
+    }
+    else {
+        res.status(400).json({ mensagem: 'CPF inválido' });
+    }
 }
 
 async function buscarUsuario(req, res) {
@@ -63,6 +75,7 @@ async function buscarUsuario(req, res) {
     })
         .then(usuario => {
             if (usuario != null) {
+                usuario.cpf = validador_cpf.format(usuario.cpf); // Inserindo pontuação no CPF
                 res.status(200).json(usuario);
             }
             else {
