@@ -17,13 +17,12 @@ async function cadastrarUsuario(req, res) {
     const cpf = validador_cpf.strip(req.body.cpf); // retirado as pontuações do CPF
 
     try {
-        const client = new Client({ connectionString: urlConexao });
-        var cadastrado = false;
-
-        await client.connect();
 
         // Validando o CPF
         if (validador_cpf.isValid(cpf)) {
+            const client = new Client({ connectionString: urlConexao });
+            var cadastrado = false;
+            await client.connect();
 
             // Verificando se o usuário já está no banco de dados (CPF deve ser único)
             await client.query('SELECT * FROM usuario WHERE cpf = $1', [cpf], function (err, result) {
@@ -41,10 +40,9 @@ async function cadastrarUsuario(req, res) {
             }
             else {
                 await client.query('INSERT INTO usuario (nome, data_nascimento, cpf) VALUES ($1, $2, $3)', [nome, data_nascimento, cpf]);
-                await client.end();
                 res.status(201).json({ mensagem: 'Usuário cadastrado com sucesso!' });
             }
-
+            await client.end();
         } else {
             res.status(400).json({ mensagem: 'CPF inválido' });
         }
@@ -59,24 +57,29 @@ async function editarUsuario(req, res) {
     const usuario_id = req.swagger.params.usuario_id.value;
     const nome = req.body.nome.trim();
     const data_nascimento = req.body.data_nascimento;
-    const cpf = req.body.cpf;
+    const cpf = validador_cpf.strip(req.body.cpf); // retirado as pontuações do CPF
 
     try {
-        const client = new Client({ connectionString: urlConexao });
-        await client.connect();
+        if (validador_cpf.isValid(cpf)) {
 
-        await client.query('UPDATE usuario SET nome = $1, data_nascimento = $2, cpf = $3 WHERE id = $4', [nome, data_nascimento, cpf, usuario_id]);
-        await client.end();
+            const client = new Client({ connectionString: urlConexao });
+            await client.connect();
 
-        res.status(200).json({ mensagem: 'Usuário atualizado com sucesso!' });
+            await client.query('UPDATE usuario SET nome = $1, data_nascimento = $2, cpf = $3 WHERE id = $4', [nome, data_nascimento, cpf, usuario_id]);
+            await client.end();
 
+            res.status(200).json({ mensagem: 'Usuário atualizado com sucesso!' });
+        }
+        else {
+            res.status(400).json({ mensagem: 'CPF inválido' });
+        }
     } catch (err) {
         console.log(err);
         res.status(500).json({ mensagem: err.toString() });
     }
 }
 
-async function buscarUsuario(req, res, next) {
+async function buscarUsuario(req, res) {
     const usuario_id = req.swagger.params.usuario_id.value;
 
     try {
@@ -88,16 +91,17 @@ async function buscarUsuario(req, res, next) {
                 return console.error(err);
             }
 
-            // Verificando se o usuário NÃO foi encontrado
-            if (result.rows.length == 0) {
-                res.status(404).json({ mensagem: 'Usuário não encontrado ' });
-                return next();
+            // Verificando se o usuário foi encontrado
+            if (result.rows.length) {
+
+                // Inserindo pontuação no CPF
+                result.rows[0].cpf = validador_cpf.format(result.rows[0].cpf);
+
+                res.status(200).json(result.rows[0]);
             }
-
-            // Inserindo pontuação no CPF
-            result.rows[0].cpf = validador_cpf.format(result.rows[0].cpf);
-
-            res.status(200).json(result.rows);
+            else {
+                res.status(404).json({ mensagem: 'Usuário não encontrado' });
+            }            
         });
         await client.end();
 
